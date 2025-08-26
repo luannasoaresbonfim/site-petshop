@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Petshop Bela - Sistema de Gestão</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <img src="/placeholder.svg?height=50&width=50" alt="Petshop Bela">
+                <h1>Petshop Bela</h1>
+            </div>
+            <nav class="nav">
+                <button class="nav-btn active" data-section="dashboard">
+                    <i class="fas fa-home"></i> Dashboard
+                </button>
+                <button class="nav-btn" data-section="estoque">
+                    <i class="fas fa-boxes"></i> Estoque
+                </button>
+                <button class="nav-btn" data-section="entrada">
+                    <i class="fas fa-plus-circle"></i> Entrada
+                </button>
+                <button class="nav-btn" data-section="saida">
+                    <i class="fas fa-minus-circle"></i> Saída
+                </button>
+                <button class="nav-btn" data-section="relatorios">
+                    <i class="fas fa-chart-bar"></i> Relatórios
+                </button>
+            </nav>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Dashboard Section -->
+            <section id="dashboard" class="section active">
+                <div class="section-header">
+                    <h2>Dashboard</h2>
+                    <p>Visão geral do sistema</p>
+                </div>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-boxes"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="total-produtos">0</h3>
+                            <p>Produtos em Estoque</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-arrow-up"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="entradas-mes">0</h3>
+                            <p>Entradas este Mês</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-arrow-down"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="saidas-mes">0</h3>
+                            <p>Saídas este Mês</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-dollar-sign"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="faturamento-mes">R$ 0,00</h3>
+                            <p>Faturamento Mensal</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-content">
+                    <div class="recent-activities">
+                        <h3>Atividades Recentes</h3>
+                        <div id="atividades-recentes" class="activities-list">
+                            <!-- Atividades serão carregadas aqui -->
+                        </div>
+                    </div>
+                    
+                    <div class="petshop-gallery">
+                        <h3>Nosso Petshop</h3>
+                        <div class="gallery-grid">
+                            <img src="petshop-hero.png" alt="Interior moderno da clínica">
+                            <img src="petshop-bath.png" alt="Área de banho e tosa">
+                            <img src="petshop-consultation.png" alt="Consultório veterinário">
+                            <img src="petshop-pharmacy.png" alt="Farmácia veterinária">
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Estoque Section -->
+            <section id="estoque" class="section">
+                <div class="section-header">
+                    <h2>Controle de Estoque</h2>
+                    <button class="btn btn-primary" id="add-produto-btn">
+                        <i class="fas fa-plus"></i> Adicionar Produto
+                    </button>
+                </div>
+                
+                <div class="filters">
+                    <input type="text" id="search-produto" placeholder="Buscar produto...">
+                    <select id="filter-categoria">
+                        <option value="">Todas as categorias</option>
+                        <option value="medicamentos">Medicamentos</option>
+                        <option value="racao">Ração</option>
+                        <option value="brinquedos">Brinquedos</option>
+                        <option value="higiene">Higiene</option>
+                        <option value="acessorios">Acessórios</option>
+                    </select>
+                </div>
+                
+                <div class="table-container">
+                    <table id="estoque-table">
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Produto</th>
+                                <th>Categoria</th>
+                                <th>Quantidade</th>
+                                <th>Preço</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="estoque-tbody">
+                            <!-- Produtos serão carregados aqui -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Entrada Section -->
+            <section id="entrada" class="section">
+                <div class="section-header">
+                    <h2>Entrada de Produtos</h2>
+                </div>
+                
+                <form id="entrada-form" class="form-container">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="entrada-produto">Produto</label>
+                            <select id="entrada-produto" required>
+                                <option value="">Selecione um produto</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="entrada-quantidade">Quantidade</label>
+                            <input type="number" id="entrada-quantidade" min="1" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="entrada-preco">Preço Unitário</label>
+                            <input type="number" id="entrada-preco" step="0.01" min="0" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="entrada-fornecedor">Fornecedor</label>
+                            <input type="text" id="entrada-fornecedor" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="entrada-nota">Número da Nota</label>
+                            <input type="text" id="entrada-nota" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="entrada-data">Data</label>
+                            <input type="date" id="entrada-data" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="entrada-observacoes">Observações</label>
+                        <textarea id="entrada-observacoes" rows="3"></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-save"></i> Registrar Entrada
+                    </button>
+                </form>
+            </section>
+
+            <!-- Saída Section -->
+            <section id="saida" class="section">
+                <div class="section-header">
+                    <h2>Saída de Produtos</h2>
+                </div>
+                
+                <form id="saida-form" class="form-container">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="saida-produto">Produto</label>
+                            <select id="saida-produto" required>
+                                <option value="">Selecione um produto</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="saida-quantidade">Quantidade</label>
+                            <input type="number" id="saida-quantidade" min="1" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="saida-tipo">Tipo de Saída</label>
+                            <select id="saida-tipo" required>
+                                <option value="">Selecione o tipo</option>
+                                <option value="venda">Venda</option>
+                                <option value="medicamento">Medicamento</option>
+                                <option value="banho">Banho e Tosa</option>
+                                <option value="consulta">Consulta Veterinária</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="saida-cliente">Cliente/Animal</label>
+                            <input type="text" id="saida-cliente" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="saida-preco">Preço de Venda</label>
+                            <input type="number" id="saida-preco" step="0.01" min="0" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="saida-data">Data</label>
+                            <input type="date" id="saida-data" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="saida-observacoes">Observações</label>
+                        <textarea id="saida-observacoes" rows="3"></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-save"></i> Registrar Saída
+                    </button>
+                </form>
+            </section>
+
+            <!-- Relatórios Section -->
+            <section id="relatorios" class="section">
+                <div class="section-header">
+                    <h2>Relatórios</h2>
+                </div>
+                
+                <div class="report-filters">
+                    <div class="form-group">
+                        <label for="relatorio-mes">Mês</label>
+                        <input type="month" id="relatorio-mes">
+                    </div>
+                    <button class="btn btn-primary" id="gerar-relatorio">
+                        <i class="fas fa-chart-bar"></i> Gerar Relatório
+                    </button>
+                </div>
+                
+                <div id="relatorio-content" class="report-content">
+                    <div class="report-summary">
+                        <h3>Resumo Mensal</h3>
+                        <div class="summary-grid">
+                            <div class="summary-item">
+                                <h4>Total de Entradas</h4>
+                                <span id="relatorio-total-entradas">0</span>
+                            </div>
+                            <div class="summary-item">
+                                <h4>Total de Saídas</h4>
+                                <span id="relatorio-total-saidas">0</span>
+                            </div>
+                            <div class="summary-item">
+                                <h4>Faturamento</h4>
+                                <span id="relatorio-faturamento">R$ 0,00</span>
+                            </div>
+                            <div class="summary-item">
+                                <h4>Medicamentos Aplicados</h4>
+                                <span id="relatorio-medicamentos">0</span>
+                            </div>
+                            <div class="summary-item">
+                                <h4>Banhos Realizados</h4>
+                                <span id="relatorio-banhos">0</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="report-tables">
+                        <div class="report-table">
+                            <h4>Entradas do Período</h4>
+                            <table id="relatorio-entradas-table">
+                                <thead>
+                                    <tr>
+                                        <th>Data</th>
+                                        <th>Produto</th>
+                                        <th>Quantidade</th>
+                                        <th>Fornecedor</th>
+                                        <th>Nota Fiscal</th>
+                                        <th>Valor</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="relatorio-entradas-tbody">
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="report-table">
+                            <h4>Saídas do Período</h4>
+                            <table id="relatorio-saidas-table">
+                                <thead>
+                                    <tr>
+                                        <th>Data</th>
+                                        <th>Produto</th>
+                                        <th>Quantidade</th>
+                                        <th>Tipo</th>
+                                        <th>Cliente</th>
+                                        <th>Valor</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="relatorio-saidas-tbody">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modal para adicionar/editar produto -->
+    <div id="produto-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">Adicionar Produto</h3>
+                <span class="close">&times;</span>
+            </div>
+            <form id="produto-form">
+                <div class="form-group">
+                    <label for="produto-codigo">Código</label>
+                    <input type="text" id="produto-codigo" required>
+                </div>
+                <div class="form-group">
+                    <label for="produto-nome">Nome do Produto</label>
+                    <input type="text" id="produto-nome" required>
+                </div>
+                <div class="form-group">
+                    <label for="produto-categoria">Categoria</label>
+                    <select id="produto-categoria" required>
+                        <option value="">Selecione uma categoria</option>
+                        <option value="medicamentos">Medicamentos</option>
+                        <option value="racao">Ração</option>
+                        <option value="brinquedos">Brinquedos</option>
+                        <option value="higiene">Higiene</option>
+                        <option value="acessorios">Acessórios</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="produto-preco">Preço</label>
+                    <input type="number" id="produto-preco" step="0.01" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label for="produto-estoque-minimo">Estoque Mínimo</label>
+                    <input type="number" id="produto-estoque-minimo" min="0" required>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="cancel-produto">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+    
+    <!-- JavaScript -->
+    <script type="module" src="script.js"></script>
+</body>
+</html>
