@@ -1,31 +1,5 @@
-// Import Firebase v9+
-import { initializeApp } from "firebase/app"
-import {
-  getFirestore,
-  collection,
-  addDoc,
-  getDocs,
-  doc,
-  updateDoc,
-  deleteDoc,
-  query,
-  orderBy,
-  serverTimestamp,
-} from "firebase/firestore"
-
-const firebaseConfig = {
-  // Substitua pelas suas configurações do Firebase
-  apiKey: "your-api-key",
-  authDomain: "your-project.firebaseapp.com",
-  projectId: "your-project-id",
-  storageBucket: "your-project.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "your-app-id",
-}
-
-// Initialize Firebase
-const firebaseApp = initializeApp(firebaseConfig)
-const db = getFirestore(firebaseApp)
+// Funcionalidades da aplicação Petshop Bela
+import { FirebaseService } from "./firebase-config.js"
 
 // Global Variables
 let currentSection = "dashboard"
@@ -47,6 +21,11 @@ document.addEventListener("DOMContentLoaded", () => {
   console.log("[v0] Inicializando aplicação...")
   setupEventListeners()
   loadData()
+
+  // Set default date inputs to today
+  const today = new Date().toISOString().split("T")[0]
+  document.getElementById("entrada-data").value = today
+  document.getElementById("saida-data").value = today
 })
 
 // Setup Event Listeners
@@ -55,8 +34,11 @@ function setupEventListeners() {
 
   // Navigation
   navButtons.forEach((btn) => {
-    btn.addEventListener("click", () => {
+    console.log(`[v0] Adicionando listener para botão: ${btn.dataset.section}`)
+    btn.addEventListener("click", (e) => {
+      e.preventDefault()
       const section = btn.dataset.section
+      console.log(`[v0] Botão clicado: ${section}`)
       switchSection(section)
     })
   })
@@ -120,6 +102,7 @@ function switchSection(sectionName) {
   }
 }
 
+// Data Loading Functions
 async function loadData() {
   console.log("[v0] Carregando dados...")
   try {
@@ -135,46 +118,35 @@ async function loadData() {
 
 async function loadProdutos() {
   try {
-    const q = query(collection(db, "produtos"), orderBy("nome"))
-    const snapshot = await getDocs(q)
-    produtos = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }))
+    produtos = await FirebaseService.getStock()
     console.log(`[v0] ${produtos.length} produtos carregados`)
   } catch (error) {
     console.error("[v0] Erro ao carregar produtos:", error)
+    produtos = []
   }
 }
 
 async function loadEntradas() {
   try {
-    const q = query(collection(db, "entradas"), orderBy("data", "desc"))
-    const snapshot = await getDocs(q)
-    entradas = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }))
+    entradas = await FirebaseService.getEntries()
     console.log(`[v0] ${entradas.length} entradas carregadas`)
   } catch (error) {
     console.error("[v0] Erro ao carregar entradas:", error)
+    entradas = []
   }
 }
 
 async function loadSaidas() {
   try {
-    const q = query(collection(db, "saidas"), orderBy("data", "desc"))
-    const snapshot = await getDocs(q)
-    saidas = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }))
+    saidas = await FirebaseService.getExits()
     console.log(`[v0] ${saidas.length} saídas carregadas`)
   } catch (error) {
     console.error("[v0] Erro ao carregar saídas:", error)
+    saidas = []
   }
 }
 
+// Dashboard Functions
 function updateDashboard() {
   console.log("[v0] Atualizando dashboard...")
 
@@ -197,7 +169,7 @@ function updateDashboard() {
   document.getElementById("entradas-mes").textContent = entradasMes.length
   document.getElementById("saidas-mes").textContent = saidasMes.length
 
-  const faturamento = saidasMes.reduce((total, saida) => total + saida.preco * saida.quantidade, 0)
+  const faturamento = saidasMes.reduce((total, saida) => total + (saida.preco || 0) * (saida.quantidade || 0), 0)
   document.getElementById("faturamento-mes").textContent = formatCurrency(faturamento)
 
   // Update recent activities
@@ -233,6 +205,7 @@ function updateRecentActivities() {
     .join("")
 }
 
+// Stock Functions
 function loadEstoque() {
   console.log("[v0] Carregando estoque...")
   const tbody = document.getElementById("estoque-tbody")
@@ -246,8 +219,8 @@ function loadEstoque() {
   tbody.innerHTML = produtos
     .map((produto) => {
       const quantidade = calcularQuantidadeAtual(produto.codigo)
-      const status = quantidade <= produto.estoqueMinimo ? "low" : "ok"
-      const statusText = quantidade <= produto.estoqueMinimo ? "Estoque Baixo" : "OK"
+      const status = quantidade <= (produto.estoqueMinimo || 0) ? "low" : "ok"
+      const statusText = quantidade <= (produto.estoqueMinimo || 0) ? "Estoque Baixo" : "OK"
 
       return `
             <tr>
@@ -274,11 +247,11 @@ function loadEstoque() {
 function calcularQuantidadeAtual(codigoProduto) {
   const totalEntradas = entradas
     .filter((entrada) => entrada.produto === codigoProduto)
-    .reduce((total, entrada) => total + entrada.quantidade, 0)
+    .reduce((total, entrada) => total + (entrada.quantidade || 0), 0)
 
   const totalSaidas = saidas
     .filter((saida) => saida.produto === codigoProduto)
-    .reduce((total, saida) => total + saida.quantidade, 0)
+    .reduce((total, saida) => total + (saida.quantidade || 0), 0)
 
   return Math.max(0, totalEntradas - totalSaidas)
 }
@@ -306,8 +279,8 @@ function filterProdutos() {
   tbody.innerHTML = filteredProdutos
     .map((produto) => {
       const quantidade = calcularQuantidadeAtual(produto.codigo)
-      const status = quantidade <= produto.estoqueMinimo ? "low" : "ok"
-      const statusText = quantidade <= produto.estoqueMinimo ? "Estoque Baixo" : "OK"
+      const status = quantidade <= (produto.estoqueMinimo || 0) ? "low" : "ok"
+      const statusText = quantidade <= (produto.estoqueMinimo || 0) ? "Estoque Baixo" : "OK"
 
       return `
             <tr>
@@ -368,6 +341,7 @@ function closeProdutoModal() {
   editingProductId = null
 }
 
+// Form Handlers
 async function handleProdutoSubmit(e) {
   e.preventDefault()
   console.log("[v0] Salvando produto...")
@@ -398,10 +372,10 @@ async function handleProdutoSubmit(e) {
 
   try {
     if (editingProductId) {
-      await updateDoc(doc(db, "produtos", editingProductId), formData)
+      await FirebaseService.updateStock(editingProductId, formData)
       showMessage("Produto atualizado com sucesso!", "success")
     } else {
-      await addDoc(collection(db, "produtos"), formData)
+      await FirebaseService.addStock(formData)
       showMessage("Produto adicionado com sucesso!", "success")
     }
 
@@ -436,11 +410,10 @@ async function handleEntradaSubmit(e) {
     nota: document.getElementById("entrada-nota").value.trim(),
     data: document.getElementById("entrada-data").value,
     observacoes: document.getElementById("entrada-observacoes").value.trim(),
-    timestamp: serverTimestamp(),
   }
 
   try {
-    await addDoc(collection(db, "entradas"), formData)
+    await FirebaseService.addEntry(formData)
     showMessage("Entrada registrada com sucesso!", "success")
 
     e.target.reset()
@@ -485,11 +458,10 @@ async function handleSaidaSubmit(e) {
     preco: preco,
     data: document.getElementById("saida-data").value,
     observacoes: document.getElementById("saida-observacoes").value.trim(),
-    timestamp: serverTimestamp(),
   }
 
   try {
-    await addDoc(collection(db, "saidas"), formData)
+    await FirebaseService.addExit(formData)
     showMessage("Saída registrada com sucesso!", "success")
 
     e.target.reset()
@@ -526,11 +498,12 @@ function loadProdutosSelect(selectId) {
       .join("")
 }
 
-async function editProduto(produtoId) {
+// Global functions for onclick handlers
+window.editProduto = async (produtoId) => {
   openProdutoModal(produtoId)
 }
 
-async function deleteProduto(produtoId) {
+window.deleteProduto = async (produtoId) => {
   const produto = produtos.find((p) => p.id === produtoId)
   if (!produto) {
     showMessage("Produto não encontrado", "error")
@@ -539,7 +512,7 @@ async function deleteProduto(produtoId) {
 
   if (confirm(`Tem certeza que deseja excluir o produto "${produto.nome}"?`)) {
     try {
-      await deleteDoc(doc(db, "produtos", produtoId))
+      await FirebaseService.deleteStock(produtoId)
       showMessage("Produto excluído com sucesso!", "success")
 
       await loadProdutos()
@@ -552,6 +525,7 @@ async function deleteProduto(produtoId) {
   }
 }
 
+// Reports
 async function gerarRelatorio() {
   console.log("[v0] Gerando relatório...")
 
@@ -562,38 +536,31 @@ async function gerarRelatorio() {
   }
 
   const [ano, mesNum] = mes.split("-")
-  const startDate = new Date(ano, mesNum - 1, 1)
-  const endDate = new Date(ano, mesNum, 0, 23, 59, 59)
 
-  const entradasPeriodo = entradas.filter((entrada) => {
-    const entradaDate = new Date(entrada.data)
-    return entradaDate >= startDate && entradaDate <= endDate
-  })
+  try {
+    const relatorio = await FirebaseService.getMonthlyReport(Number.parseInt(ano), Number.parseInt(mesNum))
 
-  const saidasPeriodo = saidas.filter((saida) => {
-    const saidaDate = new Date(saida.data)
-    return saidaDate >= startDate && saidaDate <= endDate
-  })
+    // Update summary
+    document.getElementById("relatorio-total-entradas").textContent = relatorio.entries.length
+    document.getElementById("relatorio-total-saidas").textContent = relatorio.exits.length
+    document.getElementById("relatorio-faturamento").textContent = formatCurrency(relatorio.totalExits)
 
-  // Update summary
-  document.getElementById("relatorio-total-entradas").textContent = entradasPeriodo.length
-  document.getElementById("relatorio-total-saidas").textContent = saidasPeriodo.length
+    const medicamentos = relatorio.exits.filter((saida) => saida.tipo === "medicamento").length
+    document.getElementById("relatorio-medicamentos").textContent = medicamentos
 
-  const faturamento = saidasPeriodo.reduce((total, saida) => total + saida.preco * saida.quantidade, 0)
-  document.getElementById("relatorio-faturamento").textContent = formatCurrency(faturamento)
+    const banhos = relatorio.exits.filter((saida) => saida.tipo === "banho").length
+    document.getElementById("relatorio-banhos").textContent = banhos
 
-  const medicamentos = saidasPeriodo.filter((saida) => saida.tipo === "medicamento").length
-  document.getElementById("relatorio-medicamentos").textContent = medicamentos
+    // Update tables
+    updateRelatorioEntradas(relatorio.entries)
+    updateRelatorioSaidas(relatorio.exits)
 
-  const banhos = saidasPeriodo.filter((saida) => saida.tipo === "banho").length
-  document.getElementById("relatorio-banhos").textContent = banhos
-
-  // Update tables
-  updateRelatorioEntradas(entradasPeriodo)
-  updateRelatorioSaidas(saidasPeriodo)
-
-  document.getElementById("relatorio-content").classList.add("active")
-  showMessage("Relatório gerado com sucesso!", "success")
+    document.getElementById("relatorio-content").classList.add("active")
+    showMessage("Relatório gerado com sucesso!", "success")
+  } catch (error) {
+    console.error("[v0] Erro ao gerar relatório:", error)
+    showMessage("Erro ao gerar relatório", "error")
+  }
 }
 
 function updateRelatorioEntradas(entradasPeriodo) {
@@ -614,7 +581,7 @@ function updateRelatorioEntradas(entradasPeriodo) {
             <td>${entrada.quantidade}</td>
             <td>${entrada.fornecedor}</td>
             <td>${entrada.nota}</td>
-            <td>${formatCurrency(entrada.preco * entrada.quantidade)}</td>
+            <td>${formatCurrency((entrada.preco || 0) * (entrada.quantidade || 0))}</td>
         </tr>
     `,
     )
@@ -639,13 +606,14 @@ function updateRelatorioSaidas(saidasPeriodo) {
             <td>${saida.quantidade}</td>
             <td>${getTipoSaidaLabel(saida.tipo)}</td>
             <td>${saida.cliente}</td>
-            <td>${formatCurrency(saida.preco * saida.quantidade)}</td>
+            <td>${formatCurrency((saida.preco || 0) * (saida.quantidade || 0))}</td>
         </tr>
     `,
     )
     .join("")
 }
 
+// Utility Functions
 function getProdutoNome(codigo) {
   const produto = produtos.find((p) => p.codigo === codigo)
   return produto ? produto.nome : codigo
@@ -699,151 +667,3 @@ function showMessage(message, type) {
     messageDiv.remove()
   }, 5000)
 }
-
-async function initializeSampleData() {
-  try {
-    console.log("[v0] Verificando dados de exemplo...")
-
-    // Check if data already exists
-    const produtosSnapshot = await getDocs(query(collection(db, "produtos"), orderBy("nome")))
-    if (!produtosSnapshot.empty) {
-      console.log("[v0] Dados já existem, pulando inicialização")
-      return // Data already exists
-    }
-
-    console.log("[v0] Adicionando dados de exemplo...")
-
-    // Add sample products
-    const sampleProdutos = [
-      {
-        codigo: "MED001",
-        nome: "Antibiótico Canino Premium",
-        categoria: "medicamentos",
-        preco: 45.9,
-        estoqueMinimo: 10,
-      },
-      {
-        codigo: "MED002",
-        nome: "Vermífugo para Gatos",
-        categoria: "medicamentos",
-        preco: 32.5,
-        estoqueMinimo: 15,
-      },
-      {
-        codigo: "RAC001",
-        nome: "Ração Premium Cães Adultos",
-        categoria: "racao",
-        preco: 89.9,
-        estoqueMinimo: 5,
-      },
-      {
-        codigo: "RAC002",
-        nome: "Ração Super Premium Gatos",
-        categoria: "racao",
-        preco: 75.0,
-        estoqueMinimo: 8,
-      },
-      {
-        codigo: "HIG001",
-        nome: "Shampoo Antipulgas",
-        categoria: "higiene",
-        preco: 25.5,
-        estoqueMinimo: 15,
-      },
-      {
-        codigo: "HIG002",
-        nome: "Condicionador Hidratante",
-        categoria: "higiene",
-        preco: 28.9,
-        estoqueMinimo: 12,
-      },
-      {
-        codigo: "BRI001",
-        nome: "Bola de Borracha Grande",
-        categoria: "brinquedos",
-        preco: 15.9,
-        estoqueMinimo: 20,
-      },
-      {
-        codigo: "ACC001",
-        nome: "Coleira Ajustável",
-        categoria: "acessorios",
-        preco: 35.0,
-        estoqueMinimo: 10,
-      },
-    ]
-
-    for (const produto of sampleProdutos) {
-      await addDoc(collection(db, "produtos"), produto)
-    }
-
-    // Add sample entries
-    const sampleEntradas = [
-      {
-        produto: "MED001",
-        quantidade: 50,
-        preco: 40.0,
-        fornecedor: "Farmácia Veterinária ABC",
-        nota: "NF-001234",
-        data: "2024-01-15",
-        observacoes: "Lote com validade até 2025",
-        timestamp: serverTimestamp(),
-      },
-      {
-        produto: "RAC001",
-        quantidade: 20,
-        preco: 75.0,
-        fornecedor: "Distribuidora Pet Food",
-        nota: "NF-005678",
-        data: "2024-01-20",
-        observacoes: "Ração premium importada",
-        timestamp: serverTimestamp(),
-      },
-    ]
-
-    for (const entrada of sampleEntradas) {
-      await addDoc(collection(db, "entradas"), entrada)
-    }
-
-    // Add sample exits
-    const sampleSaidas = [
-      {
-        produto: "MED001",
-        quantidade: 2,
-        tipo: "medicamento",
-        cliente: "Rex - Labrador",
-        preco: 45.9,
-        data: "2024-01-25",
-        observacoes: "Tratamento de infecção",
-        timestamp: serverTimestamp(),
-      },
-      {
-        produto: "HIG001",
-        quantidade: 1,
-        tipo: "banho",
-        cliente: "Mimi - Gato Persa",
-        preco: 25.5,
-        data: "2024-01-26",
-        observacoes: "Banho completo com antipulgas",
-        timestamp: serverTimestamp(),
-      },
-    ]
-
-    for (const saida of sampleSaidas) {
-      await addDoc(collection(db, "saidas"), saida)
-    }
-
-    console.log("[v0] Dados de exemplo adicionados com sucesso!")
-    showMessage("Dados de exemplo carregados!", "success")
-
-    // Reload data after adding samples
-    setTimeout(() => {
-      loadData()
-    }, 1000)
-  } catch (error) {
-    console.error("[v0] Erro ao inicializar dados de exemplo:", error)
-  }
-}
-
-// Call initialize sample data on first load
-setTimeout(initializeSampleData, 3000)
